@@ -4,7 +4,16 @@
 read -p "Enter your resource group name: " resourceGroup
 read -p "Enter your virtual machine name: " vmName
 read -p "Enter your virtual machine admin username: " adminUser
-read -p "Enter your virtual machine admin password: " adminPassword
+prompt="Enter your virtual machine admin password: "
+while IFS= read -p "$prompt" -r -s -n 1 char
+do
+  if [[ $char == $'\0' ]]
+  then
+    break
+  fi
+    prompt='*'
+    adminPassword+="$char"
+done
 
 # Use a case statement to prompt the user for the publisher
 echo "Select the image publisher:"
@@ -22,60 +31,3 @@ while true; do
     *) echo "Invalid number. Please enter a valid number.";;
   esac
 done
-
-# If the publisher is not RedHat, Canonical or MicrosoftWindowsServer, list the available offers for the selected publisher
-if [ "$imagePublisher" != "RedHat" ] && [ "$imagePublisher" != "Canonical" ] && [ "$imagePublisher" != "MicrosoftWindowsServer" ]; then
-  echo "Available offers for $imagePublisher publisher:"
-  az vm image list-offers --location eastus --publisher $imagePublisher --output table
-
-  # Prompt the user to select an offer
-  read -p "Enter your image offer: " imageOffer
-fi
-
-# If the publisher is Canonical, set the image offer to "UbuntuServer"
-if [ "$imagePublisher" = "Canonical" ]; then
-  imageOffer="UbuntuServer"
-fi
-
-# List the available SKUs for the specified image offer and publisher
-echo "Available SKUs for $imageOffer image offer from $imagePublisher publisher:"
-az vm image list-skus \
-    --offer $imageOffer \
-    --publisher $imagePublisher \
-    --location eastus \
-    --output table
-
-# Prompt the user to select a SKU
-read -p "Enter the name of the SKU you want to use: " imageSKU
-
-# Set the disk size to 128 GB
-osDiskSize=128
-
-# Set the VM size to Standard_DS2
-vmSize=Standard_D2s_v4
-
-# Create a resource group
-az group create --name $resourceGroup --location eastus
-
-# Create a public IP address with static allocation method
-az network public-ip create \
-    --resource-group $resourceGroup \
-    --name ${vmName}-public-ip \
-    --location eastus \
-    --sku Standard \
-    --allocation-method Static
-
-# Get the public IP address ID
-publicIpId=$(az network public-ip show --resource-group $resourceGroup --name ${vmName}-public-ip --query "id" --output tsv)
-
-# Create a virtual machine with the selected SKU and VM size
-az vm create \
-    --resource-group $resourceGroup \
-    --name $vmName \
-    --location eastus \
-    --size $vmSize \
-    --image $imagePublisher:$imageOffer:$imageSKU:latest \
-    --admin-username $adminUser \
-    --admin-password $adminPassword \
-    --os-disk-size-gb $osDiskSize \
-    --public-ip-address $publicIpId
