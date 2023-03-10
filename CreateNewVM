@@ -4,7 +4,16 @@
 read -p "Enter your resource group name: " resourceGroup
 read -p "Enter your virtual machine name: " vmName
 read -p "Enter your virtual machine admin username: " adminUser
-read -p "Enter your virtual machine admin password: " adminPassword
+prompt="Enter your virtual machine admin password: "
+while IFS= read -p "$prompt" -r -s -n 1 char
+do
+  if [[ $char == $'\0' ]]
+  then
+    break
+  fi
+    prompt='*'
+    adminPassword+="$char"
+done
 
 # Use a case statement to prompt the user for the publisher
 echo "Select the image publisher:"
