@@ -1,6 +1,6 @@
 # AzcliCreateVM
 
-I created this to crank our VM that I often create from day to day. 
+I created this to crank out a VM that I often create from day to day. 
 If you need something special, you'll need to go to the Marketplace.
 
 This script will help you quickly create a VM from one of 4 publishers: 
